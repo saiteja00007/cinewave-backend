@@ -30,4 +30,5 @@ public class SeatResponse {
     public void setCategory(SeatCategory category) { this.category = category; }
     public boolean isBooked() { return booked; }
     public void setBooked(boolean booked) { this.booked = booked; }
+    public boolean isAvailable() { return !booked; }
 }

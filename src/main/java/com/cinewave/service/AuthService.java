@@ -37,6 +37,7 @@ public class AuthService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPhone(request.getPhone());
         user.setRole(Role.USER); // Always USER — never allow public admin registration
 
         userRepository.save(user);

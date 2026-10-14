@@ -18,10 +18,15 @@ public class ShowResponse {
     private LocalDate showDate;
     private LocalTime startTime;
     private LocalTime endTime;
+    private String showTime;
     private BigDecimal priceRegular;
     private BigDecimal pricePremium;
     private BigDecimal priceRecliner;
     private boolean active;
+    private Integer totalBookings;
+    private BigDecimal totalCollection;
+    private Integer bookedSeatsCount;
+    private String status; // "UPCOMING", "LIVE", "ENDED"
 
     public static ShowResponse fromEntity(Show s) {
         ShowResponse dto = new ShowResponse();
@@ -37,12 +42,22 @@ public class ShowResponse {
         dto.setShowDate(s.getShowDate());
         dto.setStartTime(s.getStartTime());
         dto.setEndTime(s.getEndTime());
+        dto.setShowTime(s.getStartTime() != null ? s.getStartTime().toString() : null);
         dto.setPriceRegular(s.getPriceRegular());
         dto.setPricePremium(s.getPricePremium());
         dto.setPriceRecliner(s.getPriceRecliner());
         dto.setActive(s.isActive());
         return dto;
     }
+
+    public Integer getTotalBookings() { return totalBookings; }
+    public void setTotalBookings(Integer totalBookings) { this.totalBookings = totalBookings; }
+    public BigDecimal getTotalCollection() { return totalCollection; }
+    public void setTotalCollection(BigDecimal totalCollection) { this.totalCollection = totalCollection; }
+    public Integer getBookedSeatsCount() { return bookedSeatsCount; }
+    public void setBookedSeatsCount(Integer bookedSeatsCount) { this.bookedSeatsCount = bookedSeatsCount; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -68,6 +83,8 @@ public class ShowResponse {
     public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
     public LocalTime getEndTime() { return endTime; }
     public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
+    public String getShowTime() { return showTime != null ? showTime : (startTime != null ? startTime.toString() : null); }
+    public void setShowTime(String showTime) { this.showTime = showTime; }
     public BigDecimal getPriceRegular() { return priceRegular; }
     public void setPriceRegular(BigDecimal priceRegular) { this.priceRegular = priceRegular; }
     public BigDecimal getPricePremium() { return pricePremium; }

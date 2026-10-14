@@ -29,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class ShowServiceTest {
 
     @Mock
@@ -39,6 +40,15 @@ class ShowServiceTest {
 
     @Mock
     private ScreenRepository screenRepository;
+
+    @Mock
+    private com.cinewave.repository.BookingRepository bookingRepository;
+
+    @Mock
+    private com.cinewave.repository.BookingSeatRepository bookingSeatRepository;
+
+    @Mock
+    private com.cinewave.repository.PaymentRepository paymentRepository;
 
     @InjectMocks
     private ShowService showService;

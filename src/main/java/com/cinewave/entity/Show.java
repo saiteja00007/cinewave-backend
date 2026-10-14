@@ -121,10 +121,11 @@ public class Show {
      * Get the price for a specific seat category.
      */
     public BigDecimal getPriceForCategory(SeatCategory category) {
-        return switch (category) {
-            case REGULAR -> priceRegular;
-            case PREMIUM -> pricePremium;
-            case RECLINER -> priceRecliner;
-        };
+        if (category == SeatCategory.PREMIUM) {
+            return pricePremium != null ? pricePremium : priceRegular;
+        } else if (category == SeatCategory.RECLINER) {
+            return priceRecliner != null ? priceRecliner : priceRegular;
+        }
+        return priceRegular != null ? priceRegular : BigDecimal.ZERO;
     }
 }

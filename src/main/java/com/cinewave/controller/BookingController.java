@@ -29,7 +29,7 @@ public class BookingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(booking);
     }
 
-    @GetMapping("/my")
+    @GetMapping({"/my", "/my-bookings"})
     public ResponseEntity<List<BookingResponse>> getMyBookings(Authentication authentication) {
         return ResponseEntity.ok(bookingService.getUserBookings(authentication.getName()));
     }

@@ -48,6 +48,24 @@ public class Booking {
     @Column(nullable = false, length = 20)
     private BookingStatus status = BookingStatus.CONFIRMED;
 
+    @Column(name = "seats_summary", length = 250)
+    private String seatsSummary;
+
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod = "UPI";
+
+    @Column(name = "payment_status", length = 50)
+    private String paymentStatus = "SUCCESSFUL";
+
+    @Column(name = "payment_reference", length = 50)
+    private String paymentReference;
+
+    @Column(name = "promo_code", length = 50)
+    private String promoCode;
+
+    @Column(name = "discount_amount", precision = 10, scale = 2)
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -84,11 +102,29 @@ public class Booking {
     public BookingStatus getStatus() { return status; }
     public void setStatus(BookingStatus status) { this.status = status; }
 
+    public String getSeatsSummary() { return seatsSummary; }
+    public void setSeatsSummary(String seatsSummary) { this.seatsSummary = seatsSummary; }
+
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public String getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public String getPaymentReference() { return paymentReference; }
+    public void setPaymentReference(String paymentReference) { this.paymentReference = paymentReference; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public LocalDateTime getCancelledAt() { return cancelledAt; }
     public void setCancelledAt(LocalDateTime cancelledAt) { this.cancelledAt = cancelledAt; }
+
+    public String getPromoCode() { return promoCode; }
+    public void setPromoCode(String promoCode) { this.promoCode = promoCode; }
+
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
 
     public List<BookingSeat> getBookingSeats() { return bookingSeats; }
     public void setBookingSeats(List<BookingSeat> bookingSeats) { this.bookingSeats = bookingSeats; }

@@ -16,10 +16,14 @@ public class ShowRequest {
     @NotNull(message = "Show date is required")
     private LocalDate showDate;
 
-    @NotNull(message = "Start time is required")
     private LocalTime startTime;
-
+    private LocalTime showTime;
     private LocalTime endTime;
+
+    @AssertTrue(message = "Start time is required")
+    public boolean isStartTimeProvided() {
+        return startTime != null || showTime != null;
+    }
 
     @NotNull(message = "Regular price is required")
     @DecimalMin(value = "0.01", message = "Price must be positive")
@@ -41,8 +45,13 @@ public class ShowRequest {
     public void setScreenId(Long screenId) { this.screenId = screenId; }
     public LocalDate getShowDate() { return showDate; }
     public void setShowDate(LocalDate showDate) { this.showDate = showDate; }
-    public LocalTime getStartTime() { return startTime; }
+    public LocalTime getStartTime() { return startTime != null ? startTime : showTime; }
     public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
+    public LocalTime getShowTime() { return showTime != null ? showTime : startTime; }
+    public void setShowTime(LocalTime showTime) { 
+        this.showTime = showTime; 
+        if (this.startTime == null) this.startTime = showTime;
+    }
     public LocalTime getEndTime() { return endTime; }
     public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
     public BigDecimal getPriceRegular() { return priceRegular; }

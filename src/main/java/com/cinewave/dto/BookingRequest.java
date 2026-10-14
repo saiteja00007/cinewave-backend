@@ -12,6 +12,8 @@ public class BookingRequest {
     @NotEmpty(message = "At least one seat must be selected")
     private List<Long> seatIds;
 
+    private String promoCode;
+
     public BookingRequest() {}
 
     public Long getShowId() { return showId; }
@@ -19,4 +21,7 @@ public class BookingRequest {
 
     public List<Long> getSeatIds() { return seatIds; }
     public void setSeatIds(List<Long> seatIds) { this.seatIds = seatIds; }
+
+    public String getPromoCode() { return promoCode; }
+    public void setPromoCode(String promoCode) { this.promoCode = promoCode; }
 }

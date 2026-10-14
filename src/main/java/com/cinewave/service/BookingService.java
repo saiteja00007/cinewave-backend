@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,6 +27,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class BookingService {
 
     private static final Logger log = LoggerFactory.getLogger(BookingService.class);
@@ -38,17 +37,23 @@ public class BookingService {
     private final ShowRepository showRepository;
     private final SeatRepository seatRepository;
     private final UserRepository userRepository;
+    private final OfferService offerService;
+    private final PaymentRepository paymentRepository;
 
     public BookingService(BookingRepository bookingRepository,
                           BookingSeatRepository bookingSeatRepository,
                           ShowRepository showRepository,
                           SeatRepository seatRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          OfferService offerService,
+                          PaymentRepository paymentRepository) {
         this.bookingRepository = bookingRepository;
         this.bookingSeatRepository = bookingSeatRepository;
         this.showRepository = showRepository;
         this.seatRepository = seatRepository;
         this.userRepository = userRepository;
+        this.offerService = offerService;
+        this.paymentRepository = paymentRepository;
     }
 
     /**
@@ -103,13 +108,38 @@ public class BookingService {
         }
 
         // Calculate total price server-side
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal baseAmount = BigDecimal.ZERO;
         for (Seat seat : seats) {
-            totalAmount = totalAmount.add(show.getPriceForCategory(seat.getCategory()));
+            baseAmount = baseAmount.add(show.getPriceForCategory(seat.getCategory()));
+        }
+
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        String appliedPromo = null;
+
+        if (request.getPromoCode() != null && !request.getPromoCode().trim().isEmpty()) {
+            OfferValidationResponse promoResult = offerService.validatePromo(
+                    new OfferValidationRequest(request.getPromoCode(), baseAmount.doubleValue())
+            );
+            if (!promoResult.isValid()) {
+                throw new BadRequestException("Promo code error: " + promoResult.getMessage());
+            }
+            discountAmount = BigDecimal.valueOf(promoResult.getDiscountAmount());
+            appliedPromo = promoResult.getCode();
+            offerService.recordUsage(appliedPromo);
+        }
+
+        BigDecimal totalAmount = baseAmount.subtract(discountAmount);
+        if (totalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            totalAmount = BigDecimal.ZERO;
         }
 
         // Generate unique booking reference
         String bookingRef = generateBookingReference();
+
+        // Build human-readable seats summary
+        String seatsSummary = seats.stream()
+                .map(s -> s.getRowLabel() + s.getSeatNumber())
+                .collect(Collectors.joining(", "));
 
         // Create booking
         Booking booking = new Booking();
@@ -117,7 +147,10 @@ public class BookingService {
         booking.setUser(user);
         booking.setShow(show);
         booking.setTotalAmount(totalAmount);
+        booking.setPromoCode(appliedPromo);
+        booking.setDiscountAmount(discountAmount);
         booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setSeatsSummary(seatsSummary);
         booking = bookingRepository.save(booking);
 
         // Create booking seats (DB unique constraint prevents double-booking)
@@ -133,7 +166,7 @@ public class BookingService {
         booking = bookingRepository.findById(booking.getId()).orElseThrow();
         booking.setBookingSeats(bookingSeatRepository.findByBookingId(booking.getId()));
 
-        log.info("Booking created: {} for user: {}", bookingRef, userEmail);
+        log.info("Booking created: {} for user: {} with seats: {}", bookingRef, userEmail, seatsSummary);
         return BookingResponse.fromEntity(booking);
     }
 
@@ -141,7 +174,10 @@ public class BookingService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new BadRequestException("User not found"));
         return bookingRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
-                .map(BookingResponse::fromEntity)
+                .map(b -> {
+                    b.setBookingSeats(bookingSeatRepository.findByBookingId(b.getId()));
+                    return BookingResponse.fromEntity(b);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -162,6 +198,7 @@ public class BookingService {
      * Cancel a booking. Cancellation policy:
      * - Can cancel up to 2 hours before showtime
      * - Cannot cancel already cancelled bookings
+     * - Releases seats so other patrons can book them
      */
     @Transactional
     public BookingResponse cancelBooking(Long id, String userEmail) {
@@ -186,14 +223,54 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelledAt(LocalDateTime.now());
-        bookingRepository.save(booking);
+        booking.setPaymentStatus("REFUNDED");
 
-        // The booking_seats remain but are no longer counted as CONFIRMED,
-        // so those seats become available for new bookings
-        // (our queries filter by booking status = CONFIRMED)
+        // Release the reserved seats in booking_seats so that other users can book them
+        // The booking.seatsSummary retains the exact seats for receipt history.
+        List<BookingSeat> seatsToDelete = bookingSeatRepository.findByBookingId(booking.getId());
+        if (seatsToDelete != null && !seatsToDelete.isEmpty()) {
+            bookingSeatRepository.deleteAll(seatsToDelete);
+        }
 
-        booking.setBookingSeats(bookingSeatRepository.findByBookingId(booking.getId()));
-        log.info("Booking cancelled: {}", booking.getBookingReference());
+        // Update payment transactions to REFUNDED
+        List<Payment> payments = paymentRepository.findByBookingId(booking.getId());
+        for (Payment p : payments) {
+            p.setStatus("REFUNDED");
+            paymentRepository.save(p);
+        }
+
+        booking = bookingRepository.save(booking);
+
+        log.info("Booking cancelled: {} for user: {}", booking.getBookingReference(), userEmail);
+        return BookingResponse.fromEntity(booking);
+    }
+
+    @Transactional
+    public BookingResponse cancelBookingAdmin(Long id) {
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + id));
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new BadRequestException("Booking is already cancelled");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledAt(LocalDateTime.now());
+        booking.setPaymentStatus("REFUNDED");
+
+        List<BookingSeat> seatsToDelete = bookingSeatRepository.findByBookingId(booking.getId());
+        if (seatsToDelete != null && !seatsToDelete.isEmpty()) {
+            bookingSeatRepository.deleteAll(seatsToDelete);
+        }
+
+        List<Payment> payments = paymentRepository.findByBookingId(booking.getId());
+        for (Payment p : payments) {
+            p.setStatus("REFUNDED");
+            paymentRepository.save(p);
+        }
+
+        booking = bookingRepository.save(booking);
+        log.info("Admin cancelled booking: {}", booking.getBookingReference());
         return BookingResponse.fromEntity(booking);
     }
 
@@ -208,8 +285,33 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
+    public List<BookingResponse> filterBookings(String search, BookingStatus status, java.time.LocalDate date) {
+        return bookingRepository.filterBookings(search, status, date).stream()
+                .map(b -> {
+                    b.setBookingSeats(bookingSeatRepository.findByBookingId(b.getId()));
+                    return BookingResponse.fromEntity(b);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public BookingResponse getBookingByIdAdmin(Long id) {
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + id));
+        booking.setBookingSeats(bookingSeatRepository.findByBookingId(booking.getId()));
+        return BookingResponse.fromEntity(booking);
+    }
+
     public List<BookingResponse> searchBookings(String query) {
         return bookingRepository.searchBookings(query).stream()
+                .map(b -> {
+                    b.setBookingSeats(bookingSeatRepository.findByBookingId(b.getId()));
+                    return BookingResponse.fromEntity(b);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<BookingResponse> getOwnerBookings(Long ownerId) {
+        return bookingRepository.findByOwnerId(ownerId).stream()
                 .map(b -> {
                     b.setBookingSeats(bookingSeatRepository.findByBookingId(b.getId()));
                     return BookingResponse.fromEntity(b);

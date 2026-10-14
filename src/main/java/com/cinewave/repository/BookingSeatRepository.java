@@ -27,4 +27,9 @@ public interface BookingSeatRepository extends JpaRepository<BookingSeat, Long> 
                                @Param("seatIds") List<Long> seatIds);
 
     List<BookingSeat> findByBookingId(Long bookingId);
+
+    @Query("SELECT COUNT(bs) FROM BookingSeat bs WHERE bs.seat.id = :seatId " +
+           "AND bs.booking.status = com.cinewave.entity.BookingStatus.CONFIRMED " +
+           "AND bs.show.showDate >= :date AND bs.show.active = true")
+    long countFutureConfirmedBookingsForSeat(@Param("seatId") Long seatId, @Param("date") java.time.LocalDate date);
 }

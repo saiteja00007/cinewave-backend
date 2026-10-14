@@ -32,13 +32,13 @@ public class Movie {
     private String description;
 
     @NotBlank
-    @Size(max = 50)
-    @Column(nullable = false)
+    @Size(max = 255)
+    @Column(nullable = false, length = 255)
     private String genre;
 
     @NotBlank
-    @Size(max = 50)
-    @Column(nullable = false)
+    @Size(max = 255)
+    @Column(nullable = false, length = 255)
     private String language;
 
     @Min(1)
@@ -48,20 +48,47 @@ public class Movie {
     @Column(name = "release_date")
     private LocalDate releaseDate;
 
-    @Size(max = 10)
-    private String rating; // e.g. "PG-13", "R", "U/A"
+    @Size(max = 50)
+    @Column(length = 50)
+    private String rating; // e.g. "PG-13", "R", "U/A", "UA 16+"
 
-    @Size(max = 500)
-    @Column(name = "cast_info")
+    @Column(name = "cast_info", columnDefinition = "TEXT")
     private String castInfo;
 
-    @Size(max = 500)
-    @Column(name = "poster_url")
+    @Column(name = "poster_url", columnDefinition = "MEDIUMTEXT")
     private String posterUrl;
 
     @Size(max = 500)
     @Column(name = "trailer_url")
     private String trailerUrl;
+
+    @Column(name = "tmdb_id")
+    private Long tmdbId;
+
+    @Column(name = "backdrop_url", columnDefinition = "TEXT")
+    private String backdropUrl;
+
+    @Column(name = "vote_average")
+    private Double voteAverage;
+
+    @Column(name = "vote_count")
+    private Integer voteCount;
+
+    @Size(max = 100)
+    @Column(name = "director")
+    private String director;
+
+    @Column(name = "tag", length = 50)
+    private String tag = "NOW_PLAYING"; // "NOW_PLAYING", "UPCOMING", "POPULAR"
+
+    @Column(name = "original_language", length = 20)
+    private String originalLanguage = "te";
+
+    @Column(name = "tmdb_last_synced_at")
+    private LocalDateTime tmdbLastSyncedAt;
+
+    @Column(name = "customized_by_admin")
+    private Boolean customizedByAdmin = Boolean.FALSE;
 
     @Column(nullable = false)
     private boolean active = true;
@@ -123,8 +150,35 @@ public class Movie {
     public String getTrailerUrl() { return trailerUrl; }
     public void setTrailerUrl(String trailerUrl) { this.trailerUrl = trailerUrl; }
 
+    public Long getTmdbId() { return tmdbId; }
+    public void setTmdbId(Long tmdbId) { this.tmdbId = tmdbId; }
+
+    public String getBackdropUrl() { return backdropUrl; }
+    public void setBackdropUrl(String backdropUrl) { this.backdropUrl = backdropUrl; }
+
+    public Double getVoteAverage() { return voteAverage; }
+    public void setVoteAverage(Double voteAverage) { this.voteAverage = voteAverage; }
+
+    public Integer getVoteCount() { return voteCount; }
+    public void setVoteCount(Integer voteCount) { this.voteCount = voteCount; }
+
+    public String getDirector() { return director; }
+    public void setDirector(String director) { this.director = director; }
+
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public String getTag() { return tag; }
+    public void setTag(String tag) { this.tag = tag; }
+
+    public String getOriginalLanguage() { return originalLanguage; }
+    public void setOriginalLanguage(String originalLanguage) { this.originalLanguage = originalLanguage; }
+
+    public LocalDateTime getTmdbLastSyncedAt() { return tmdbLastSyncedAt; }
+    public void setTmdbLastSyncedAt(LocalDateTime tmdbLastSyncedAt) { this.tmdbLastSyncedAt = tmdbLastSyncedAt; }
+
+    public boolean isCustomizedByAdmin() { return Boolean.TRUE.equals(customizedByAdmin); }
+    public void setCustomizedByAdmin(Boolean customizedByAdmin) { this.customizedByAdmin = Boolean.TRUE.equals(customizedByAdmin); }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

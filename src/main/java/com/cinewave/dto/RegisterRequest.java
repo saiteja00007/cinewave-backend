@@ -18,6 +18,9 @@ public class RegisterRequest {
     @Size(min = 6, max = 100, message = "Password must be 6-100 characters")
     private String password;
 
+    @Size(max = 20, message = "Phone must be under 20 characters")
+    private String phone;
+
     public RegisterRequest() {}
 
     public String getName() { return name; }
@@ -28,4 +31,8 @@ public class RegisterRequest {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 }
+

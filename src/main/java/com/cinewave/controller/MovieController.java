@@ -21,11 +21,14 @@ public class MovieController {
     public ResponseEntity<List<MovieResponse>> getMovies(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String genre,
-            @RequestParam(required = false) String language) {
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String tag) {
 
         List<MovieResponse> movies;
         if (search != null && !search.isBlank()) {
             movies = movieService.searchMovies(search);
+        } else if (tag != null && !tag.isBlank()) {
+            movies = movieService.getMoviesByTag(tag);
         } else if (genre != null || language != null) {
             movies = movieService.filterMovies(genre, language);
         } else {
@@ -34,7 +37,27 @@ public class MovieController {
         return ResponseEntity.ok(movies);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/now-playing")
+    public ResponseEntity<List<MovieResponse>> getNowPlaying() {
+        return ResponseEntity.ok(movieService.getNowPlayingMovies());
+    }
+
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<MovieResponse>> getUpcoming() {
+        return ResponseEntity.ok(movieService.getUpcomingMovies());
+    }
+
+    @GetMapping("/popular")
+    public ResponseEntity<List<MovieResponse>> getPopular() {
+        return ResponseEntity.ok(movieService.getPopularMovies());
+    }
+
+    @GetMapping("/by-language")
+    public ResponseEntity<List<MovieResponse>> getByLanguage(@RequestParam String lang) {
+        return ResponseEntity.ok(movieService.getMoviesByLanguage(lang));
+    }
+
+    @GetMapping("/{id:[0-9]+}")
     public ResponseEntity<MovieResponse> getMovie(@PathVariable Long id) {
         return ResponseEntity.ok(movieService.getMovieById(id));
     }

@@ -33,5 +33,17 @@ public interface ShowRepository extends JpaRepository<Show, Long> {
            "AND s.showDate >= :today ORDER BY s.showDate, s.startTime")
     List<Show> findAllUpcoming(@Param("today") LocalDate today);
 
+    List<Show> findByShowDateAndActiveTrueOrderByStartTime(LocalDate showDate);
+
+    List<Show> findByActiveTrueOrderByShowDateDescStartTimeAsc();
+
+    @Query("SELECT s FROM Show s WHERE s.screen.theater.owner.id = :ownerId AND s.active = true ORDER BY s.showDate DESC, s.startTime ASC")
+    List<Show> findByOwnerId(@Param("ownerId") Long ownerId);
+
+    @Query("SELECT s FROM Show s WHERE s.screen.theater.id = :theaterId AND s.active = true ORDER BY s.showDate DESC, s.startTime ASC")
+    List<Show> findByTheaterId(@Param("theaterId") Long theaterId);
+
     long countByActiveTrue();
+
+    long countByActiveTrueAndShowDateGreaterThanEqual(LocalDate today);
 }

@@ -12,11 +12,11 @@ public class MovieRequest {
     private String description;
 
     @NotBlank(message = "Genre is required")
-    @Size(max = 50)
+    @Size(max = 255)
     private String genre;
 
     @NotBlank(message = "Language is required")
-    @Size(max = 50)
+    @Size(max = 255)
     private String language;
 
     @NotNull(message = "Duration is required")
@@ -25,17 +25,32 @@ public class MovieRequest {
 
     private LocalDate releaseDate;
 
-    @Size(max = 10)
+    @Size(max = 50)
     private String rating;
 
-    @Size(max = 500)
     private String castInfo;
 
-    @Size(max = 500)
     private String posterUrl;
 
     @Size(max = 500)
     private String trailerUrl;
+
+    private Long tmdbId;
+
+    private String backdropUrl;
+
+    private Double voteAverage;
+
+    private Integer voteCount;
+
+    @Size(max = 100)
+    private String director;
+
+    private String tag = "NOW_PLAYING";
+
+    private String originalLanguage = "te";
+
+    private Boolean customizedByAdmin = true;
 
     public MovieRequest() {}
 
@@ -68,4 +83,28 @@ public class MovieRequest {
 
     public String getTrailerUrl() { return trailerUrl; }
     public void setTrailerUrl(String trailerUrl) { this.trailerUrl = trailerUrl; }
+
+    public Long getTmdbId() { return tmdbId; }
+    public void setTmdbId(Long tmdbId) { this.tmdbId = tmdbId; }
+
+    public String getBackdropUrl() { return backdropUrl; }
+    public void setBackdropUrl(String backdropUrl) { this.backdropUrl = backdropUrl; }
+
+    public Double getVoteAverage() { return voteAverage; }
+    public void setVoteAverage(Double voteAverage) { this.voteAverage = voteAverage; }
+
+    public Integer getVoteCount() { return voteCount; }
+    public void setVoteCount(Integer voteCount) { this.voteCount = voteCount; }
+
+    public String getDirector() { return director; }
+    public void setDirector(String director) { this.director = director; }
+
+    public String getTag() { return tag; }
+    public void setTag(String tag) { this.tag = tag; }
+
+    public String getOriginalLanguage() { return originalLanguage; }
+    public void setOriginalLanguage(String originalLanguage) { this.originalLanguage = originalLanguage; }
+
+    public Boolean getCustomizedByAdmin() { return customizedByAdmin; }
+    public void setCustomizedByAdmin(Boolean customizedByAdmin) { this.customizedByAdmin = customizedByAdmin; }
 }

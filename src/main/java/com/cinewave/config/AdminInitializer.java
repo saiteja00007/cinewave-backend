@@ -40,14 +40,36 @@ public class AdminInitializer {
                 return;
             }
 
-            if (userRepository.existsByEmail(adminEmail)) {
-                log.info("Admin account already exists for: {}", adminEmail);
-                return;
-            }
-
-            User admin = new User(adminName, adminEmail, encoder.encode(adminPassword), Role.ADMIN);
-            userRepository.save(admin);
-            log.info("✅ Initial admin created: {}", adminEmail);
+            userRepository.findByEmail(adminEmail).ifPresentOrElse(
+                admin -> {
+                    boolean updated = false;
+                    if (admin.getRole() != Role.ADMIN) {
+                        admin.setRole(Role.ADMIN);
+                        updated = true;
+                        log.info("Elevated role to ADMIN for existing account: {}", adminEmail);
+                    }
+                    if (!admin.isActive()) {
+                        admin.setActive(true);
+                        updated = true;
+                        log.info("Re-activated admin account: {}", adminEmail);
+                    }
+                    if (!encoder.matches(adminPassword, admin.getPassword())) {
+                        admin.setPassword(encoder.encode(adminPassword));
+                        updated = true;
+                        log.info("Synchronized admin password with configured application properties for: {}", adminEmail);
+                    }
+                    if (updated) {
+                        userRepository.save(admin);
+                    }
+                    log.info("Admin account verified: {} (Role: {}, Active: {})", adminEmail, admin.getRole(), admin.isActive());
+                },
+                () -> {
+                    User admin = new User(adminName, adminEmail, encoder.encode(adminPassword), Role.ADMIN);
+                    admin.setActive(true);
+                    userRepository.save(admin);
+                    log.info("Created initial admin account: {}", adminEmail);
+                }
+            );
         };
     }
 }

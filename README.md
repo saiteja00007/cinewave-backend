@@ -1,31 +1,59 @@
 # CineWave Backend API 🎬
 
-The backend REST API for **CineWave**, an enterprise-grade movie ticket and cinema auditorium booking platform built with **Spring Boot 3.5**, **Java 17/21**, and **Spring Security 6**.
+An enterprise-grade, digital cinema auditorium and movie ticket booking platform built with **Spring Boot 3.5.0**, **Java 21**, **Spring Security 6**, and **MySQL**.
+
+Inspired by BookMyShow, CineWave powers real-time seat reservations, automated TMDB poster synchronization, theater discovery, role-based administration, OTP authentication, and Razorpay payment integration.
 
 ---
 
-## 🚀 Overview
+## 🌟 Key Capabilities
 
-CineWave Backend delivers high-performance RESTful APIs managing real-time cinema operations:
-- **Authentication & Security**: Stateless JWT token authentication with role-based access control (`ROLE_CUSTOMER`, `ROLE_ADMIN`).
-- **Catalog Management**: Full CRUD operations for movies, genres, languages, multiplexes, auditoriums, and showtimes.
-- **Auditorium Seating Engine**: Dynamic tiered seat layout generation (Recliner, Premium, Regular) with seat availability resolution.
-- **Concurrency-Safe Booking**: Transactional reservations with optimistic/pessimistic lock guards against double bookings.
-- **Simulated Payment & QR Pass**: Payment verification and digital boarding pass generation.
-- **Admin Control Center**: Analytics aggregations, revenue tracking, and schedule collision detection.
+1. **Exact TMDB Poster Synchronization (`/api/tmdb/**`, `MovieSyncService`)**:
+   - Searches TMDB API for Indian and global releases (Telugu, Hindi, Tamil, Malayalam, Kannada, English).
+   - Admin search & selection modal stores exact TMDB IDs, backdrop paths, and high-resolution posters.
+   - Built-in curated catalog fallback prevents fake, missing, or mismatched posters.
+
+2. **Automated Theater Directory Discovery (`TheaterDirectoryService`)**:
+   - Discovers and caches multiplexes with geographic coordinates (Hyderabad, Telangana prioritized).
+   - Strict separation between discovered directory theaters and verified partner inventory.
+   - Bulk CSV import support for new multiplex chains.
+
+3. **3 Separate Roles with Backend Enforcement**:
+   - **ADMIN**: System-wide dashboard, global metrics, CRUD over movies, theaters, screens, seats, shows, users, events, streams, offers, and booking audits.
+   - **THEATER_OWNER**: Dedicated portal (`/owner/*`) restricted exclusively to assigned theaters. Screen configuration, seat layout generation, showtime scheduling, and theater-specific revenue analytics.
+   - **USER**: Public catalog browsing, seat reservation, M-ticket generation, OTP verification, profile management, and booking cancellations.
+
+4. **Concurrency-Safe Seating & Booking Engine (`BookingService`)**:
+   - Real-time seat layout generation with 3 tiers: 🛋️ Recliner, 🌟 Premium, 🎟️ Regular.
+   - Transactional isolation prevents seat double booking during concurrent checkouts.
+   - 10-minute temporary seat hold with automatic release on expiration or cancellation.
+
+5. **Dual-Mode OTP Verification (`OtpService`)**:
+   - Email OTP via SMTP (Gmail, SendGrid, Amazon SES) with masked recipient delivery.
+   - SMS OTP via Twilio / Fast2SMS with normalized E.164 phone numbers.
+   - Secure fallback to dev/sandbox console mode when provider credentials are not yet configured.
+
+6. **Razorpay Payment Integration (`PaymentService`)**:
+   - Order creation, server-side amount calculation, and HMAC-SHA256 signature verification.
+   - Transparent sandbox simulation mode for local development.
+
+7. **Events, Streams & Promotional Offers**:
+   - Live events ticketing with venue, date, and pass booking (`/api/events`).
+   - Digital stream catalog with legal playback actions and fallback states (`/api/streams`).
+   - Promotional promo-code engine with minimum order value, validity checks, and instant discounts (`/api/offers`).
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Technology Stack
 
 - **Framework**: Spring Boot 3.5.0
-- **Language**: Java 17 / 21
-- **Security**: Spring Security 6 + JJWT (`0.12.6`)
-- **Persistence**: Spring Data JPA / Hibernate ORM 6
-- **Database**:
-  - **Local Development**: H2 In-Memory Database (auto-seeded)
-  - **Production**: MySQL (Aiven Cloud Managed MySQL with SSL)
-- **Build Tool**: Maven (`mvnw`)
+- **Language**: Java 21 (JDK 21 LTS)
+- **Security**: Spring Security 6 (Stateless JWT token filter + BCrypt password hashing)
+- **Persistence**: Spring Data JPA / Hibernate 6
+- **Connection Pool**: HikariCP Enterprise
+- **Database**: MySQL 9.7 (Supports local MySQL & Cloud MySQL like Aiven, AWS RDS, Railway)
+- **Build Tool**: Maven 3.9+ (`mvnw`)
+- **External Integrations**: TMDB API v3, Razorpay API, JavaMailSender SMTP, Twilio SMS
 
 ---
 
@@ -34,17 +62,19 @@ CineWave Backend delivers high-performance RESTful APIs managing real-time cinem
 ```
 backend/
 ├── src/main/java/com/cinewave/
-│   ├── config/          # Security, Web MVC, and CORS configuration
-│   ├── controller/      # REST API Controllers (Auth, Movie, Booking, Theater, Admin, etc.)
-│   ├── dto/             # Request & Response Data Transfer Objects
-│   ├── entity/          # JPA Entities (User, Movie, Theater, Screen, Seat, Showtime, Booking)
-│   ├── exception/       # Global exception handlers & custom exceptions
-│   ├── repository/      # Spring Data JPA Repositories
-│   ├── security/        # JWT Authentication Filter, Token Provider & UserDetails
-│   └── service/         # Business logic layer
-└── src/main/resources/
-    ├── application.properties
-    └── application-local.properties
+│   ├── config/              # SecurityConfig, DataSeeder, AdminInitializer
+│   ├── controller/          # REST Controllers (Auth, Movie, Theater, Show, Booking, Admin, Owner, etc.)
+│   ├── dto/                 # Request/Response DTOs
+│   ├── entity/              # JPA Entities (User, Movie, Theater, Screen, Seat, Show, Booking, Payment, Otp, Event, Offer, Stream)
+│   ├── exception/           # Global exception handlers
+│   ├── repository/          # Spring Data JPA Repositories
+│   ├── security/            # JwtAuthenticationFilter, JwtTokenProvider, CustomUserDetailsService
+│   └── service/             # Business Logic Layer
+├── src/main/resources/
+│   ├── application.properties
+│   └── schema_update.sql    # Incremental database DDL schemas
+├── pom.xml
+└── .env.example
 ```
 
 ---
@@ -52,71 +82,110 @@ backend/
 ## ⚡ Getting Started
 
 ### Prerequisites
-- **JDK 17** or **JDK 21**
+- **Java 21 JDK** installed (`java -version`)
 - **Maven 3.8+** (or use included `./mvnw`)
+- **MySQL 8.0+ / 9.x** running on `localhost:3306`
 
-### Running Locally (Zero-Config In-Memory Database)
-
-Runs with an auto-seeded catalog (sample movies, theaters, screens, and showtimes) without needing an external MySQL instance:
-
-```bash
-# On Linux / macOS
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
-
-# On Windows PowerShell
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
+### 1. Database Setup
+Ensure the MySQL database `cinewave` exists:
+```sql
+CREATE DATABASE IF NOT EXISTS cinewave CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-- API Base URL: `http://localhost:8080/api`
-- H2 Web Console: `http://localhost:8080/h2-console`
-  - JDBC URL: `jdbc:h2:mem:cinewavedb`
-  - User: `sa` | Password: *(blank)*
-
-### Running with Production / Cloud MySQL
-
-Set the environment variables or update `application.properties`:
-
+### 2. Configuration (`.env`)
+Copy the environment template:
 ```bash
-export DB_URL="jdbc:mysql://<host>:<port>/cinewavedb?sslMode=REQUIRED"
-export DB_USERNAME="<username>"
-export DB_PASSWORD="<password>"
-export JWT_SECRET="<your-256-bit-secret-key>"
+cp .env.example .env
+```
+Fill in your database credentials:
+```properties
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=cinewave
+DB_USERNAME=root
+DB_PASSWORD=your_password
+JWT_SECRET=your_super_secret_jwt_key_at_least_32_characters_long
+```
 
+### 3. Build & Run
+```bash
+# Run all unit and integration tests (44 tests)
+./mvnw clean test
+
+# Run application
 ./mvnw spring-boot:run
 ```
 
----
+Backend will start on: **`http://localhost:8080`**
 
-## 🔑 Key API Endpoints
+Default Administrator:
+- **Email**: `admin@cinewave.com`
+- **Password**: `Admin@123`
 
-| Method | Endpoint | Description | Access |
-|---|---|---|---|
-| `POST` | `/api/auth/register` | Register a new customer | Public |
-| `POST` | `/api/auth/login` | Login and obtain JWT token | Public |
-| `GET` | `/api/movies` | Fetch all movies / now showing | Public |
-| `GET` | `/api/movies/{id}` | Movie details and metadata | Public |
-| `GET` | `/api/theaters` | List multiplexes and locations | Public |
-| `GET` | `/api/showtimes` | Query showtimes by movie & date | Public |
-| `GET` | `/api/showtimes/{id}/seats` | Seat layout and availability | Public |
-| `POST` | `/api/bookings` | Create ticket reservation | Authenticated |
-| `GET` | `/api/bookings/my` | Retrieve user booking history | Authenticated |
-| `GET` | `/api/admin/metrics` | Platform overview & metrics | Admin Only |
-| `POST` | `/api/admin/movies` | Add or update movie | Admin Only |
+Default Theater Owner:
+- **Email**: `owner@cinewave.com`
+- **Password**: `Admin@123`
 
 ---
 
-## 🧪 Testing & Build
+## 🧪 Testing
 
 ```bash
-# Run unit and integration tests
-./mvnw clean test
-
-# Build executable JAR
-./mvnw clean package -DskipTests
+# Run full automated test suite
+mvn test
 ```
-The output JAR will be generated in `target/cinewave-backend-1.0.0.jar`.
+The test suite validates:
+- Database connectivity & HikariCP initialization
+- JWT authentication & BCrypt credential verification
+- Role-based authorization (`ADMIN`, `THEATER_OWNER`, `USER`)
+- Owner isolation (preventing access to unassigned theaters)
+- Concurrency-safe seat reservations & double-booking prevention
+- TMDB synchronization & catalog persistence
+- Theater directory discovery & CSV bulk import
 
 ---
 
-## 👤 Author
-- **GitHub**: [@saiteja00007](https://github.com/saiteja00007)
+## 🚀 Production Deployment
+
+### Option A: Railway / Render / AWS Elastic Beanstalk
+1. Package the executable fat JAR:
+   ```bash
+   ./mvnw clean package -DskipTests
+   ```
+2. Set environment variables on your cloud provider:
+   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`
+   - `DB_SSL_MODE=REQUIRED`
+   - `JWT_SECRET`
+   - `CORS_ORIGINS=https://your-frontend-domain.vercel.app`
+   - `TMDB_API_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`
+3. Launch with:
+   ```bash
+   java -jar target/cinewave-backend-1.0.0.jar
+   ```
+
+### Option B: Docker Container
+```dockerfile
+FROM eclipse-temurin:21-jdk-alpine AS builder
+WORKDIR /app
+COPY . .
+RUN ./mvnw clean package -DskipTests
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/target/cinewave-backend-1.0.0.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+---
+
+## 📦 GitHub Repository Setup
+
+To push this backend codebase as a standalone repository (`CineWave-Backend`):
+```bash
+cd backend
+git remote set-url origin https://github.com/<YOUR_GITHUB_USERNAME>/CineWave-Backend.git
+git add .
+git commit -m "feat: complete CineWave Spring Boot backend with full BookMyShow functionality"
+git push -u origin main
+```

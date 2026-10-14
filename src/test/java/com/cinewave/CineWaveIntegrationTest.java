@@ -5,7 +5,6 @@ import com.cinewave.entity.BookingStatus;
 import com.cinewave.repository.MovieRepository;
 import com.cinewave.repository.ShowRepository;
 import com.cinewave.repository.TheaterRepository;
-import com.cinewave.repository.UserRepository;
 import com.cinewave.service.AuthService;
 import com.cinewave.service.BookingService;
 import com.cinewave.service.MovieService;
@@ -13,7 +12,6 @@ import com.cinewave.service.ShowService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -32,9 +30,6 @@ class CineWaveIntegrationTest {
 
     @Autowired
     private ShowRepository showRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private AuthService authService;

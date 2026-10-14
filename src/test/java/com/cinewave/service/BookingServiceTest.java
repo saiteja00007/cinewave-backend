@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class BookingServiceTest {
 
     @Mock
@@ -41,6 +42,12 @@ class BookingServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private OfferService offerService;
+
+    @Mock
+    private PaymentRepository paymentRepository;
 
     @InjectMocks
     private BookingService bookingService;

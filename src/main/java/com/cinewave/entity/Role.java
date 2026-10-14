@@ -5,5 +5,6 @@ package com.cinewave.entity;
  */
 public enum Role {
     USER,
-    ADMIN
+    ADMIN,
+    THEATER_OWNER
 }

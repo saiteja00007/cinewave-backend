@@ -6,9 +6,7 @@ import com.cinewave.dto.SeatRequest;
 import com.cinewave.dto.SeatResponse;
 import com.cinewave.dto.TheaterRequest;
 import com.cinewave.dto.TheaterResponse;
-import com.cinewave.entity.Role;
 import com.cinewave.entity.Screen;
-import com.cinewave.entity.Seat;
 import com.cinewave.entity.SeatCategory;
 import com.cinewave.entity.Theater;
 import com.cinewave.repository.ScreenRepository;
@@ -29,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class TheaterServiceTest {
 
     @Mock
@@ -39,6 +38,15 @@ class TheaterServiceTest {
 
     @Mock
     private SeatRepository seatRepository;
+
+    @Mock
+    private com.cinewave.repository.UserRepository userRepository;
+
+    @Mock
+    private com.cinewave.repository.BookingRepository bookingRepository;
+
+    @Mock
+    private com.cinewave.repository.BookingSeatRepository bookingSeatRepository;
 
     @InjectMocks
     private TheaterService theaterService;
