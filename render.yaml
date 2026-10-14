@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: cinewave-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 3306
+      - key: DB_NAME
+        value: cinewave
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSL_MODE
+        value: PREFERRED
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@cinewave.com
+      - key: ADMIN_PASSWORD
+        value: Admin@123
+      - key: CORS_ORIGINS
+        value: "https://*.netlify.app,https://*.vercel.app,http://localhost:5173"
